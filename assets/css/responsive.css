@@ -553,11 +553,12 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
 }
 
 /* ========================================
-   折疊機展開（近正方形平板）：題目與選項雙窗格
-   固定視窗高度，導航列固定在底部，不需整頁捲動
+   題目畫面精簡版面（手機直向與折疊機展開共用）
+   隱藏最外層標題列、卡片標題合併成單列、導航列固定在底部
    ======================================== */
 
-@media (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
+@media (max-width: 599px),
+    (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
     #app {
         height: 100dvh;
         min-height: 0;
@@ -610,20 +611,16 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
         min-height: 0;
     }
     .fold-body {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+        display: flex;
+        flex-direction: column;
         padding: 0.75rem !important;
         flex: 1;
         min-height: 0;
-        overflow: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
     }
     .fold-pane {
         display: block;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        overscroll-behavior: contain;
     }
     #foldNav {
         order: 3;
@@ -667,6 +664,7 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
     }
     .question-header-left {
         flex: 1 1 auto;
+        justify-content: flex-start;
         min-width: 0;
         width: auto !important;
         gap: 0.5rem !important;
@@ -726,6 +724,38 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
         width: 1.75rem;
         height: 1.75rem;
     }
+    #foldNav {
+        padding-top: 0.375rem !important;
+    }
+    #foldNav button {
+        min-height: 40px;
+        padding-top: 0.375rem !important;
+        padding-bottom: 0.375rem !important;
+    }
+    #foldNav #jumpInput {
+        min-height: 40px;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+}
+
+/* ========================================
+   折疊機展開（近正方形）：題目與選項雙窗格、各自捲動
+   ======================================== */
+
+@media (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
+    .fold-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        overflow: hidden;
+    }
+    .fold-pane {
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+    }
     /* 選項都很短時排成兩欄（由 main.js 依選項長度加上 class） */
     #optionsContainer.options-compact {
         display: grid;
@@ -748,19 +778,6 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
     #optionsContainer.options-compact .option-btn.option-pending::after {
         display: none;
     }
-    #foldNav {
-        padding-top: 0.375rem !important;
-    }
-    #foldNav button {
-        min-height: 40px;
-        padding-top: 0.375rem !important;
-        padding-bottom: 0.375rem !important;
-    }
-    #foldNav #jumpInput {
-        min-height: 40px;
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
-    }
     .floating-panel {
         top: 0 !important;
         right: 0 !important;
@@ -776,6 +793,53 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
     }
     .floating-panel-header {
         cursor: default;
+    }
+}
+
+/* ========================================
+   手機直向：單欄整體捲動，標題列空間不足時功能鈕換到第二列
+   ======================================== */
+
+@media (max-width: 599px) {
+    .fold-pane-answer {
+        margin-top: 0.75rem;
+    }
+    #questionHeader {
+        flex-wrap: wrap;
+        row-gap: 0.375rem;
+    }
+    .question-header-right {
+        margin-left: auto;
+    }
+    #foldNav {
+        gap: 0.375rem;
+        padding-left: 0.5rem !important;
+        padding-right: 60px !important;
+    }
+    #foldNav button {
+        padding-left: 0.625rem !important;
+        padding-right: 0.625rem !important;
+        white-space: nowrap;
+        gap: 0.25rem;
+    }
+    #foldNav .jump-controls {
+        flex-wrap: nowrap;
+        gap: 0.25rem;
+    }
+    #foldNav #jumpInput {
+        width: 3rem !important;
+    }
+    /* 舊的 640px 以下規則把計時器改成直排，這裡改回單列 */
+    #questionCard #timerBar .flex {
+        flex-direction: row;
+        gap: 0.25rem;
+    }
+}
+
+/* 極窄手機：導航鈕省略箭頭圖示，避免換行 */
+@media (max-width: 380px) {
+    #foldNav button svg {
+        display: none;
     }
 }
 

@@ -13,9 +13,14 @@ const FOLD_QUERY =
 
 /** 取出以 query 開頭的媒體查詢區塊本文（以大括號配對）。 */
 function mediaBlock(source, query) {
-    const start = source.indexOf(query);
-    assert.notEqual(start, -1, '找不到折疊機媒體查詢');
-    const open = source.indexOf('{', start);
+    // Prettier 可能把長查詢折行，比對時把空白視為任意空白
+    const pattern = query
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\s+/g, '\\s+');
+    const m = new RegExp(pattern).exec(source);
+    assert.ok(m, `找不到媒體查詢：${query}`);
+    const open = source.indexOf('{', m.index);
     let depth = 0;
     for (let i = open; i < source.length; i++) {
         if (source[i] === '{') depth++;
@@ -86,6 +91,14 @@ test('預設 .fold-pane 為 display: contents 且不在媒體查詢內', () => {
 });
 
 const fold = () => mediaBlock(css, FOLD_QUERY);
+/** 手機與折疊機共用的精簡版面 */
+const COMPACT_QUERY =
+    '@media (max-width: 599px), (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3)';
+const PHONE_QUERY = '@media (max-width: 599px)';
+const compact = () => mediaBlock(css, COMPACT_QUERY);
+const phone = () => mediaBlock(css, PHONE_QUERY + ' {');
+/** 共用區塊在前、折疊機專屬在後；rule() 取第一個符合的規則 */
+const all = () => compact() + '\n' + fold();
 const rule = (block, selector) => {
     const esc = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const m = new RegExp(`(?:^|[},\\s])${esc}\\s*\\{([^}]*)\\}`, 'm').exec(block);
@@ -97,21 +110,21 @@ test('折疊機區塊啟用兩欄並讓窗格各自捲動', () => {
     const b = fold();
     assert.match(rule(b, '.fold-body'), /display: grid/);
     assert.match(rule(b, '.fold-body'), /grid-template-columns: 1fr 1fr/);
+    assert.match(rule(compact(), '.fold-pane'), /display: block/);
     const pane = rule(b, '.fold-pane');
-    assert.match(pane, /display: block/);
     assert.match(pane, /overflow-y: auto/);
     assert.match(pane, /min-height: 0/);
 });
 
 test('折疊機區塊固定視窗高度並精簡標題列與頁尾', () => {
-    const b = fold();
+    const b = all();
     assert.match(rule(b, '#app'), /height: 100dvh/);
     assert.match(rule(b, 'header'), /position: static/);
     assert.match(rule(b, 'footer'), /display: none/);
 });
 
 test('折疊機區塊處理導航列、答題卡鈕與題目頭部', () => {
-    const b = fold();
+    const b = all();
     assert.match(rule(b, '#foldNav'), /order: 3/);
     assert.match(rule(b, '#foldNav'), /padding-right: 64px/);
     assert.match(rule(b, '.stats-toggle-btn'), /width: 44px/);
@@ -160,7 +173,7 @@ test('題庫未顯示時隱藏答題卡切換鈕', () => {
 });
 
 test('審查修正：#app 重設 min-height，避免 100vh 蓋過 100dvh', () => {
-    assert.match(rule(fold(), '#app'), /min-height: 0/);
+    assert.match(rule(all(), '#app'), /min-height: 0/);
 });
 
 test('審查修正：抽屜高度不受 80vh 限制', () => {
@@ -168,7 +181,7 @@ test('審查修正：抽屜高度不受 80vh 限制', () => {
 });
 
 test('審查修正：導航列與答題卡鈕保留 safe-area 底部間距', () => {
-    const b = fold();
+    const b = all();
     assert.match(rule(b, '#foldNav'), /safe-area-inset-bottom/);
     assert.match(rule(b, '.stats-toggle-btn'), /safe-area-inset-bottom/);
 });
@@ -181,15 +194,15 @@ test('審查修正：只有換題才重置窗格捲動，切換翻譯或高亮�
 });
 
 test('審查修正：折疊機區塊內 header 不再 sticky、導航列順序固定、窗格不橫向捲動', () => {
-    const b = fold();
+    const b = all();
     assert.match(rule(b, 'header'), /position: static !important/);
     assert.match(rule(b, '#foldNav > *'), /order: 0/);
-    assert.match(rule(b, '.fold-pane'), /overflow-x: hidden/);
+    assert.match(rule(fold(), '.fold-pane'), /overflow-x: hidden/);
     assert.match(rule(b, '.floating-panel-header'), /cursor: default/);
 });
 
 test('深度精簡：題目畫面隱藏最外層標題列，選單鈕移入卡片標題列', () => {
-    const b = fold();
+    const b = all();
     assert.match(b, /body:has\(#quizContainer:not\(\.hidden\)\) header\s*\{[^}]*display: none/);
     assert.match(rule(b, '.fold-menu-btn'), /display: flex/);
     assert.match(rule(b, '.mobile-menu-panel'), /display: block !important/);
@@ -202,7 +215,7 @@ test('深度精簡：題目畫面隱藏最外層標題列，選單鈕移入卡�
 });
 
 test('深度精簡：倒數計時併入卡片標題列，進度條改成底部細線', () => {
-    const b = fold();
+    const b = all();
     assert.match(rule(b, '#questionHeader'), /display: flex/);
     assert.match(rule(b, '#questionHeader'), /position: relative/);
     assert.match(rule(b, '#questionCard #timerBar'), /margin: 0 !important/);
@@ -215,8 +228,31 @@ test('深度精簡：倒數計時併入卡片標題列，進度條改成底部�
 });
 
 test('深度精簡：導航列、卡片內距與選項間距縮小', () => {
-    const b = fold();
+    const b = all();
     assert.match(rule(b, '.fold-body'), /padding: 0.75rem !important/);
     assert.match(rule(b, '#foldNav button'), /min-height: 40px/);
     assert.match(rule(b, '.fold-pane .option-btn'), /padding: 0.75rem 1rem/);
+});
+
+test('手機（599px 以下）共用精簡版面：單欄整體捲動、標題列可換行', () => {
+    assert.match(rule(compact(), '.fold-body'), /overflow-y: auto/);
+    assert.match(rule(phone(), '#questionHeader'), /flex-wrap: wrap/);
+    assert.match(rule(phone(), '.question-header-right'), /margin-left: auto/);
+});
+
+test('觸控裝置不做選項 hover 位移，標示外框改為內框避免被裁切', () => {
+    const mainCss = read('assets/css/main.css');
+    assert.match(
+        mainCss,
+        /@media \(hover: none\)\s*\{\s*\.option-btn:hover:not\(\.answered\)\s*\{[^}]*transform: none/,
+    );
+    assert.match(mainCss, /\.option-btn\.option-pending\s*\{[^}]*box-shadow: inset/);
+});
+
+test('手機精簡版面覆蓋舊規則：計時器橫排、題號靠左、導航列不換行', () => {
+    const p = phone();
+    assert.match(rule(p, '#questionCard #timerBar .flex'), /flex-direction: row/);
+    assert.match(rule(all(), '.question-header-left'), /justify-content: flex-start/);
+    assert.match(rule(p, '#foldNav .jump-controls'), /flex-wrap: nowrap/);
+    assert.match(rule(p, '#foldNav button'), /white-space: nowrap/);
 });
