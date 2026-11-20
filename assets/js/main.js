@@ -905,7 +905,6 @@ function showAnswerResult(question, isCorrect, userAnswer = '') {
                 </svg>
                 答對了！
             </div>
-            ${renderSourceSection(question)}
         `;
         return;
     }
@@ -923,7 +922,6 @@ function showAnswerResult(question, isCorrect, userAnswer = '') {
         <p class="text-slate-300">
             ${chosen ? `你的答案：<span class="text-red-400 font-bold">${escapeHtml(chosen)}</span>　｜　` : ''}正確答案：<span class="text-green-400 font-bold">${escapeHtml(question.correctAnswer)}</span>
         </p>
-        ${renderSourceSection(question)}
     `;
 }
 
@@ -1398,7 +1396,7 @@ function renderMarkdown(text) {
 
 /**
  * 產生題目來源區塊的 HTML；題目沒有 `**來源**` 欄位時回傳空字串。
- * 來源可能含有答案裁定等資訊，因此只在作答後或開啟解析時顯示，避免提前洩漏答案。
+ * 來源可能含有答案裁定等資訊，因此只在題目解析與簡答題答案中顯示，避免提前洩漏答案。
  * @param {Object} q - 題目物件
  * @returns {string}
  */
