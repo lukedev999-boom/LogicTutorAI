@@ -150,7 +150,10 @@
                 class="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 overflow-hidden"
             >
                 <!-- 題目頭部 - 手機版優化 -->
-                <div class="bg-slate-800 px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-700">
+                <div
+                    id="questionHeader"
+                    class="bg-slate-800 px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-700"
+                >
                     <!-- 計時器區塊 - 倒數計時 -->
                     <div
                         id="timerBar"
@@ -171,7 +174,8 @@
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                                     />
                                 </svg>
-                                <span class="text-xs sm:text-sm text-amber-400 font-medium"
+                                <span
+                                    class="timer-label text-xs sm:text-sm text-amber-400 font-medium"
                                     >剩餘時間</span
                                 >
                             </div>
@@ -190,7 +194,7 @@
                             </div>
                         </div>
                         <!-- 進度條 -->
-                        <div class="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="timer-track mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
                             <div
                                 id="timerProgress"
                                 class="h-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-100"
@@ -319,6 +323,28 @@
                                 </svg>
                                 <span class="hidden sm:inline">AI 解析</span>
                                 <span class="sm:hidden">AI</span>
+                            </button>
+                            <!-- 折疊機：最外層標題列隱藏後，由此開啟選單 -->
+                            <button
+                                id="foldMenuBtn"
+                                class="fold-menu-btn bg-slate-700 hover:bg-slate-600 active:bg-slate-500 rounded-lg transition items-center justify-center touch-target no-select"
+                                onclick="openMobileMenu()"
+                                title="選單"
+                                aria-label="開啟選單"
+                            >
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 6h16M4 12h16M4 18h16"
+                                    />
+                                </svg>
                             </button>
                         </div>
                     </div>

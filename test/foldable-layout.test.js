@@ -115,7 +115,7 @@ test('折疊機區塊處理導航列、答題卡鈕與題目頭部', () => {
     assert.match(rule(b, '#foldNav'), /order: 3/);
     assert.match(rule(b, '#foldNav'), /padding-right: 64px/);
     assert.match(rule(b, '.stats-toggle-btn'), /width: 44px/);
-    assert.match(rule(b, '.question-header-wrapper'), /flex-wrap: nowrap/);
+    assert.match(rule(b, '.question-header-wrapper'), /display: contents/);
 });
 
 test('工具類別保護區塊仍在檔案最末，折疊機區塊在它之前', () => {
@@ -186,4 +186,37 @@ test('審查修正：折疊機區塊內 header 不再 sticky、導航列順序�
     assert.match(rule(b, '#foldNav > *'), /order: 0/);
     assert.match(rule(b, '.fold-pane'), /overflow-x: hidden/);
     assert.match(rule(b, '.floating-panel-header'), /cursor: default/);
+});
+
+test('深度精簡：題目畫面隱藏最外層標題列，選單鈕移入卡片標題列', () => {
+    const b = fold();
+    assert.match(b, /body:has\(#quizContainer:not\(\.hidden\)\) header\s*\{[^}]*display: none/);
+    assert.match(rule(b, '.fold-menu-btn'), /display: flex/);
+    assert.match(rule(b, '.mobile-menu-panel'), /display: block !important/);
+    assert.match(css, /^\.fold-menu-btn\s*\{\s*display: none;/m);
+    const right = paneHtml('question-header-right');
+    assert.match(
+        right,
+        /class="fold-menu-btn[^"]*"[^>]*onclick="openMobileMenu\(\)"|onclick="openMobileMenu\(\)"[^>]*class="fold-menu-btn/,
+    );
+});
+
+test('深度精簡：倒數計時併入卡片標題列，進度條改成底部細線', () => {
+    const b = fold();
+    assert.match(rule(b, '#questionHeader'), /display: flex/);
+    assert.match(rule(b, '#questionHeader'), /position: relative/);
+    assert.match(rule(b, '#questionCard #timerBar'), /margin: 0 !important/);
+    assert.match(rule(b, '#questionCard #timerBar'), /min-height: 0/);
+    assert.match(rule(b, '.timer-label'), /display: none/);
+    assert.match(rule(b, '.timer-track'), /position: absolute/);
+    assert.match(html, /id="questionHeader"/);
+    assert.match(html, /class="timer-label/);
+    assert.match(html, /class="timer-track/);
+});
+
+test('深度精簡：導航列、卡片內距與選項間距縮小', () => {
+    const b = fold();
+    assert.match(rule(b, '.fold-body'), /padding: 0.75rem !important/);
+    assert.match(rule(b, '#foldNav button'), /min-height: 40px/);
+    assert.match(rule(b, '.fold-pane .option-btn'), /padding: 0.75rem 1rem/);
 });
