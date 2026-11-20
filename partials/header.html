@@ -32,11 +32,20 @@
                 <input
                     type="file"
                     id="fileInput"
-                    accept=".md"
+                    accept=".md,.zip"
                     class="hidden"
                     onchange="loadFileFromInput(event)"
                 />
             </label>
+            <button
+                type="button"
+                data-clear-saved-bank
+                hidden
+                onclick="clearSavedBank()"
+                class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-sm font-medium transition touch-target"
+            >
+                清除已儲存的題庫
+            </button>
             <!-- 重新載入按鈕 -->
             <button
                 onclick="reloadQuestions()"

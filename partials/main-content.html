@@ -27,7 +27,7 @@
         </div>
         <h2 class="text-xl font-semibold text-white mb-2">尚未載入題庫</h2>
         <p class="text-slate-400 mb-3 text-center">
-            請點擊上方「載入題庫」按鈕選擇 Markdown 題庫檔案<br />或將
+            請點擊上方「載入題庫」按鈕選擇 Markdown 或 ZIP 題庫<br />或將
             <code class="bg-slate-700 px-2 py-0.5 rounded text-sm">database.md</code> 放在同目錄下
         </p>
         <p
@@ -49,7 +49,7 @@
                 選擇題庫檔案
                 <input
                     type="file"
-                    accept=".md"
+                    accept=".md,.zip"
                     class="hidden"
                     onchange="loadFileFromInput(event)"
                 />

@@ -49,7 +49,7 @@ let timerQuestionNum = null; // 計時器所屬題號，用於判斷是否需要
  * @param {HTMLImageElement} img
  */
 function handleImageError(img) {
-    const src = img.getAttribute('src') || '';
+    const src = img.dataset.bankImage || img.getAttribute('src') || '';
     const placeholder = document.createElement('div');
     placeholder.className =
         'w-full max-w-lg p-4 rounded-lg border border-dashed border-slate-600 bg-slate-800/50 text-center';
@@ -57,10 +57,7 @@ function handleImageError(img) {
         '<p class="text-slate-300 text-sm mb-1">🖼️ 圖片載入失敗</p>' +
         '<p class="text-slate-500 text-xs break-all">找不到 <code>' +
         escapeHtml(src) +
-        '</code></p>' +
-        '<p class="text-slate-500 text-xs mt-2">請將圖片檔放到 <code>' +
-        IMAGE_BASE_DIR +
-        '</code>（與 index.html 同層）</p>';
+        '</code></p>';
     img.replaceWith(placeholder);
 }
 
@@ -103,94 +100,174 @@ function applyQuestions(parsed) {
 }
 
 // ==================== 題庫載入 ====================
-/**
- * 嘗試自動載入同目錄下的題庫檔案
- *
- * 以 file:// 開啟時瀏覽器會因同源政策阻擋 fetch，此時直接引導使用者手動選檔，
- * 不再讓畫面停在沒有說明的空狀態。
- */
+let activeBank = null;
+let activeBankFiles = null;
+let bankLoading = false;
+let hasSavedBank = false;
+let bankImageRequest = null;
+const bankImageUrls = new Set();
+
+function releaseBankImages() {
+    bankImageRequest?.abort();
+    bankImageRequest = null;
+    for (const url of bankImageUrls) URL.revokeObjectURL(url);
+    bankImageUrls.clear();
+    document.getElementById('imageWrapper').replaceChildren();
+    document.getElementById('questionImage').replaceChildren();
+    closeImageDialog();
+}
+
+async function showBankImages(bank, paths) {
+    const request = new AbortController();
+    bankImageRequest = request;
+    // 順序解壓當前題目的圖片，快速切題時停止舊工作。
+    for (const path of new Set(paths)) {
+        if (request.signal.aborted) return;
+        const images = [...document.querySelectorAll('img[data-bank-image]')].filter(
+            (image) => image.dataset.bankImage === path,
+        );
+        try {
+            const blob = await bank.readImage(path, request.signal);
+            if (request.signal.aborted) return;
+            const url = URL.createObjectURL(blob);
+            bankImageUrls.add(url);
+            for (const image of images) image.src = url;
+        } catch (error) {
+            if (request.signal.aborted) return;
+            for (const image of images) handleImageError(image);
+        }
+    }
+}
+
+function updateSavedBankControls() {
+    for (const button of document.querySelectorAll('[data-clear-saved-bank]')) {
+        button.hidden = !hasSavedBank;
+    }
+}
+
+function useBank(bank, files = null) {
+    if (!bank.parsed.length) throw new Error('無法解析題庫檔案，請確認格式正確');
+    releaseBankImages();
+    if (activeBank?.close) void activeBank.close();
+    activeBank = bank;
+    activeBankFiles = files;
+    applyQuestions(bank.parsed);
+}
+
+async function loadBankFiles(files) {
+    const bank = await readBankFiles(files);
+    if (!bank.parsed.length) {
+        await bank.close?.();
+        throw new Error('無法解析題庫檔案，請確認格式正確');
+    }
+    useBank(bank, files);
+}
+
+async function loadDefaultBank() {
+    if (location.protocol !== 'file:') {
+        try {
+            const response = await fetch('database.md', { cache: 'no-cache' });
+            if (response.ok) {
+                useBank({ parsed: parseQuestions(await response.text()) });
+                return true;
+            }
+        } catch (error) {
+            console.warn('載入預設題庫失敗', error);
+        }
+    }
+    return false;
+}
+
 async function autoLoadQuestions() {
-    if (location.protocol === 'file:') {
-        showEmptyState('離線模式（file://）無法自動讀取題庫，請點擊「載入題庫」選擇 Markdown 檔案');
+    bankLoading = true;
+    try {
+        try {
+            const files = await savedBank.read();
+            hasSavedBank = Boolean(files);
+            updateSavedBankControls();
+            if (files) {
+                await loadBankFiles(files);
+                return;
+            }
+        } catch (error) {
+            if (hasSavedBank) showToast('無法恢復已儲存的題庫，請重新選檔', 'warn');
+        }
+        if (!(await loadDefaultBank())) showEmptyState();
+    } finally {
+        bankLoading = false;
+    }
+}
+
+async function loadFileFromInput(event) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length) return;
+    if (bankLoading) {
+        showToast('題庫處理中，請稍後再選檔', 'warn');
         return;
     }
 
-    try {
-        const response = await fetch('database.md');
-        if (response.ok) {
-            const markdown = await response.text();
-            if (applyQuestions(parseQuestions(markdown))) return;
-        }
-    } catch (e) {
-        console.warn('自動載入題庫失敗，等待手動選擇檔案', e);
-    }
-    // 顯示空狀態
-    showEmptyState();
-}
-
-/**
- * 從檔案輸入載入題庫（支援多檔案合併）
- */
-async function loadFileFromInput(event) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
+    bankLoading = true;
     showLoadingState();
-
     try {
-        // 讀取所有檔案內容
-        const readFile = (file) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(e);
-                reader.readAsText(file);
-            });
-        };
-
-        // 並行讀取所有檔案
-        const contents = await Promise.all(Array.from(files).map((file) => readFile(file)));
-
-        // 合併所有 MD 內容（用 --- 分隔符連接）
-        const mergedMarkdown = contents.join('\n\n---\n\n');
-
-        if (applyQuestions(parseQuestions(mergedMarkdown))) {
-            showToast(`已載入 ${files.length} 個檔案，共 ${questions.length} 題`, 'success');
-        } else {
-            showToast('無法解析題庫檔案，請確認格式正確', 'error');
-            showEmptyState();
+        await loadBankFiles(files);
+        try {
+            await savedBank.write(files);
+            hasSavedBank = true;
+            updateSavedBankControls();
+            showToast(`已載入 ${questions.length} 題，並儲存在此瀏覽器`, 'success');
+        } catch (error) {
+            const hint = hasSavedBank ? '下次會恢復先前儲存的題庫' : '下次需要重新選檔';
+            showToast('已載入，但無法儲存這份題庫。' + hint, 'warn');
         }
     } catch (error) {
-        console.error('載入檔案時發生錯誤:', error);
-        showToast(error.message || '載入檔案時發生錯誤，請重試', 'error');
-        showEmptyState();
+        showToast(error.message || '載入題庫失敗', 'error');
+        if (questions.length) showQuizContainer();
+        else showEmptyState();
+    } finally {
+        bankLoading = false;
     }
-
-    // 清空 file input，讓使用者可以再次選擇相同檔案
-    event.target.value = '';
 }
 
-/**
- * 重新載入題庫
- */
 async function reloadQuestions() {
-    if (location.protocol === 'file:') {
-        showToast('離線模式無法自動重新載入，請使用「載入題庫」選擇檔案', 'warn');
-        return;
-    }
-
+    if (bankLoading) return;
+    bankLoading = true;
     showLoadingState();
     try {
-        const response = await fetch('database.md', { cache: 'no-cache' });
-        if (response.ok) {
-            const markdown = await response.text();
-            if (applyQuestions(parseQuestions(markdown))) return;
-        }
-    } catch (e) {
-        console.warn('重新載入題庫失敗', e);
+        if (activeBankFiles) await loadBankFiles(activeBankFiles);
+        else if (!(await loadDefaultBank())) throw new Error('無法讀取預設題庫');
+    } catch (error) {
+        showToast('重新載入失敗，請使用「載入題庫」選擇檔案', 'error');
+        if (questions.length) showQuizContainer();
+        else showEmptyState();
+    } finally {
+        bankLoading = false;
     }
-    showToast('重新載入失敗，請使用「載入題庫」按鈕手動選擇檔案', 'error');
-    showQuizContainer();
+}
+
+async function clearSavedBank() {
+    if (bankLoading || !hasSavedBank) return;
+    if (!window.confirm('清除已儲存的題庫？下次使用這份題庫時需要重新選檔。')) return;
+
+    bankLoading = true;
+    try {
+        await savedBank.clear();
+        hasSavedBank = false;
+        updateSavedBankControls();
+        releaseBankImages();
+        if (activeBank?.close) await activeBank.close();
+        activeBank = null;
+        activeBankFiles = null;
+        questions = [];
+        stopTimer();
+        showLoadingState();
+        if (!(await loadDefaultBank())) showEmptyState();
+        showToast('已清除儲存的題庫', 'success');
+    } catch (error) {
+        showToast('無法清除已儲存的題庫', 'error');
+    } finally {
+        bankLoading = false;
+    }
 }
 
 // ==================== UI 狀態管理 ====================
@@ -430,6 +507,9 @@ function renderQuestion(opts = {}) {
         categoryEl.classList.toggle('hidden', !q.category);
     }
 
+    releaseBankImages();
+    const imageAttribute = activeBank?.readImage ? 'data-bank-image' : 'src';
+
     // 顯示/隱藏查看圖片按鈕（附圖片題才顯示）
     const viewImageBtn = document.getElementById('viewImageBtn');
     if (q.imagePaths && q.imagePaths.length > 0) {
@@ -446,7 +526,7 @@ function renderQuestion(opts = {}) {
                 (path, index) => `
             <div class="w-full flex flex-col items-center">
                 ${q.imagePaths.length > 1 ? `<p class="text-sm text-slate-400 mb-2">圖片 ${index + 1} / ${q.imagePaths.length}</p>` : ''}
-                <img src="${escapeHtml(path)}" alt="題目圖片 ${index + 1}"
+                <img ${imageAttribute}="${escapeHtml(path)}" alt="題目圖片 ${index + 1}"
                      class="max-w-full object-contain select-none shadow-2xl rounded border border-slate-700"
                      draggable="false" onerror="handleImageError(this)">
             </div>
@@ -467,7 +547,7 @@ function renderQuestion(opts = {}) {
                 (path, index) => `
             <div class="flex flex-col items-center">
                 ${q.imagePaths.length > 1 ? `<p class="text-sm text-slate-400 mb-2">圖片 ${index + 1} / ${q.imagePaths.length}</p>` : ''}
-                <img src="${escapeHtml(path)}" alt="題目圖片 ${index + 1}" loading="lazy"
+                <img ${imageAttribute}="${escapeHtml(path)}" alt="題目圖片 ${index + 1}" loading="lazy"
                      class="max-w-full rounded-lg border border-slate-600 shadow-lg cursor-pointer hover:border-blue-500 transition-colors"
                      onclick="openImageDialog()" onerror="handleImageError(this)"
                      title="點擊放大查看">
@@ -478,6 +558,10 @@ function renderQuestion(opts = {}) {
     } else {
         imageContainer.classList.add('hidden');
         imageContainer.innerHTML = '';
+    }
+
+    if (activeBank?.readImage && q.imagePaths.length) {
+        void showBankImages(activeBank, q.imagePaths);
     }
 
     // 顯示題目文字（支援反引號關鍵字高亮）

@@ -52,7 +52,7 @@ function normalizeImagePath(rawPath) {
     return fileName ? IMAGE_BASE_DIR + fileName : '';
 }
 
-function parseQuestions(markdown) {
+function parseQuestions(markdown, resolveImage = normalizeImagePath) {
     const codeBlocks = [];
     const masked = String(markdown)
         .replace(/\r\n?/g, '\n')
@@ -115,7 +115,7 @@ function parseQuestions(markdown) {
                 englishText: values.English,
                 chineseText: values.中文 || '',
                 imagePaths: [...(values.圖片 || '').matchAll(/!\[[^\]]*\]\(([^)]*)\)/g)]
-                    .map((match) => normalizeImagePath(match[1]))
+                    .map((match) => resolveImage(match[1]))
                     .filter(Boolean),
                 options,
                 correctAnswer,

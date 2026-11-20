@@ -11,3 +11,12 @@ for (const [source, target] of [
         path.join(root, 'assets/vendor', target),
     );
 }
+for (const [source, target] of [
+    ['dist/zip.min.js', 'zip.min.js'],
+    ['LICENSE', 'zip.js-LICENSE'],
+]) {
+    fs.copyFileSync(
+        path.join(root, 'node_modules/@zip.js/zip.js', source),
+        path.join(root, 'assets/vendor', target),
+    );
+}

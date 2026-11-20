@@ -31,7 +31,7 @@
             <span>載入題庫</span>
             <input
                 type="file"
-                accept=".md"
+                accept=".md,.zip"
                 class="hidden"
                 onchange="
                     loadFileFromInput(event);
@@ -39,6 +39,19 @@
                 "
             />
         </label>
+
+        <div data-clear-saved-bank hidden>
+            <button
+                type="button"
+                onclick="
+                    closeMobileMenu();
+                    clearSavedBank();
+                "
+                class="menu-item w-full text-left"
+            >
+                清除已儲存的題庫
+            </button>
+        </div>
 
         <!-- 重新載入 -->
         <button
