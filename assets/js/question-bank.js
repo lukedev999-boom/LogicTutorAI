@@ -70,7 +70,7 @@ function parseQuestions(markdown) {
             const block = masked.slice(header.index + header[0].length, headers[index + 1]?.index);
             const fields = [
                 ...block.matchAll(
-                    /^\*\*(English|中文|圖片|選項|正確答案|參考答案|題目解析)[：:]?([^*\n]*)\*\*[ 	]*/gm,
+                    /^\*\*(English|中文|圖片|分類|選項|正確答案|參考答案|來源|題目解析)[：:]?([^*\n]*)\*\*[ 	]*/gm,
                 ),
             ];
             const values = {};
@@ -121,15 +121,24 @@ function parseQuestions(markdown) {
                 correctAnswer,
                 shortAnswer: values.參考答案 || null,
                 explanation: values.題目解析 || null,
+                category: values.分類 || null,
+                source: values.來源 || null,
             };
         })
         .sort((a, b) => a.number - b.number);
 }
 
-/** 完整內容參與識別，避免同題號的不同題庫共用進度。 */
+/**
+ * 完整內容參與識別，避免同題號的不同題庫共用進度。
+ * 分類與來源屬於附註資訊，不參與識別：補上或修改來源不會讓既有作答進度失效。
+ */
+const BANK_ID_IGNORED_KEYS = new Set(['category', 'source']);
+
 function computeBankId(list) {
     if (!list.length) return 'default';
-    const signature = JSON.stringify(list);
+    const signature = JSON.stringify(list, (key, value) =>
+        BANK_ID_IGNORED_KEYS.has(key) ? undefined : value,
+    );
     let hash = 5381;
     for (let i = 0; i < signature.length; i++) {
         hash = (Math.imul(hash, 33) ^ signature.charCodeAt(i)) >>> 0;

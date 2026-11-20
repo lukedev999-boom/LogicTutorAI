@@ -1,6 +1,6 @@
 # LogicTutorAI 原創範例題庫
 
-示範單選、多選、簡答、雙語、關鍵字、重要標記與 Markdown 解析。
+示範單選、多選、簡答、雙語、關鍵字、重要標記、分類、來源與 Markdown 解析。
 
 ## 第 1 題 【單選題】
 
@@ -10,6 +10,8 @@ Which file does this tool load as its default `Markdown` question bank?
 **中文：**
 本工具預設讀取哪個 Markdown 題庫檔案？
 
+**分類：** 基本操作
+
 **選項：**
 
 - A. database.md（預設題庫）
@@ -18,6 +20,11 @@ Which file does this tool load as its default `Markdown` question bank?
 - D. package.json（套件設定）
 
 **正確答案：A**
+
+**來源**
+
+- 範例題庫甲：第 1 題
+- 範例題庫乙：第 4 題
 
 **題目解析：**
 網頁透過相對路徑讀取同層的 `database.md`，因此也能部署在網站子目錄。
@@ -40,6 +47,12 @@ Which features work without an AI API key? Choose two.
 - D. Requesting AI models（向 AI 服務取得模型）
 
 **正確答案：C,A**
+
+**來源**
+
+- 範例題庫甲：第 2 題
+- 範例題庫乙：第 6 題
+- 備註：兩份題庫的答案不同，已依題幹裁定為 A、C。
 
 **題目解析：**
 A 與 C 都在瀏覽器本機完成。
@@ -64,6 +77,9 @@ How can you add a question bank to this static website?
 1. 複製範例題庫，修改題幹、選項與答案。
 2. 點擊「載入題庫」選擇 Markdown 檔案。
 3. 要替換網站預設內容，更新 `database.md` 再部署。
+
+**來源：**
+範例題庫乙：第 9 題
 
 **題目解析：**
 簡答題使用參考答案，不計入選擇題正確率。

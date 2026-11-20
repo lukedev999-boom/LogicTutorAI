@@ -222,6 +222,21 @@ body {
    Markdown 渲染樣式
    ======================================== */
 
+/* 題目來源區塊：作答結果、簡答參考答案與解析面板共用 */
+.question-source {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.question-source-title {
+    margin-bottom: 0.25rem;
+    color: #7dd3fc;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
 .explanation-content {
     color: #e2e8f0;
     font-size: 0.9rem;

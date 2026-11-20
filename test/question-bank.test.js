@@ -17,6 +17,33 @@ test('範例包含全部題型、重要標記、圖片與完整程式碼', () =>
     assert.deepEqual(bank[4].imagePaths, ['images/example.svg']);
 });
 
+test('分類與來源獨立成欄位，不混入中文題幹或正確答案', () => {
+    const bank = parseQuestions(sample);
+    assert.equal(bank[0].category, '基本操作');
+    assert.equal(bank[0].chineseText, '本工具預設讀取哪個 Markdown 題庫檔案？');
+    assert.equal(bank[0].correctAnswer, 'A');
+    assert.match(bank[0].source, /^- 範例題庫甲：第 1 題\n- 範例題庫乙：第 4 題$/);
+    assert.doesNotMatch(bank[0].explanation, /範例題庫/);
+    assert.match(bank[1].source, /已依題幹裁定/);
+    assert.equal(bank[2].source, '範例題庫乙：第 9 題');
+    assert.equal(bank[3].category, null);
+    assert.equal(bank[3].source, null);
+});
+
+test('補上或修改來源與分類不影響題庫識別與作答進度', () => {
+    const id = computeBankId(parseQuestions(sample));
+    const withoutMeta = sample
+        .replace(/\*\*分類：\*\*[^\n]*\n\n/g, '')
+        .replace(/\*\*來源[：:]?\*\*\n[\s\S]*?(?=\n\*\*題目解析)/g, '');
+    const stripped = parseQuestions(withoutMeta);
+    assert.ok(stripped.every((q) => q.source === null && q.category === null));
+    assert.equal(computeBankId(stripped), id);
+    assert.equal(
+        computeBankId(parseQuestions(sample.replace('範例題庫甲：第 1 題', '範例題庫丙：第 3 題'))),
+        id,
+    );
+});
+
 test('Windows 換行、ASCII 欄位冒號與縮排選項', () => {
     const changed = sample
         .replaceAll('：', ':')

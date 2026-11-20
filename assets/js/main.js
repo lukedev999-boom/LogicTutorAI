@@ -385,10 +385,10 @@ function renderQuestion(opts = {}) {
         closeExplanationPanel();
     }
 
-    // 顯示/隱藏解析提示按鈕（只有有解析的題目才顯示）
+    // 顯示/隱藏解析提示按鈕（有解析或來源的題目才顯示）
     const explanationBtn = document.getElementById('explanationBtn');
     const importantBadge = document.getElementById('importantBadge');
-    if (q.explanation) {
+    if (q.explanation || q.source) {
         explanationBtn.classList.remove('hidden');
         explanationBtn.classList.add('flex');
     } else {
@@ -421,6 +421,14 @@ function renderQuestion(opts = {}) {
     }
     typeEl.className =
         'px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ' + typeClass;
+
+    // 顯示題目分類（題庫有 `**分類：**` 欄位時才顯示）
+    const categoryEl = document.getElementById('questionCategory');
+    if (categoryEl) {
+        categoryEl.textContent = q.category || '';
+        categoryEl.title = q.category || '';
+        categoryEl.classList.toggle('hidden', !q.category);
+    }
 
     // 顯示/隱藏查看圖片按鈕（附圖片題才顯示）
     const viewImageBtn = document.getElementById('viewImageBtn');
@@ -769,6 +777,7 @@ function showShortAnswer() {
         } else {
             shortAnswerContent.innerHTML = '<p class="text-slate-400">此題無參考答案</p>';
         }
+        shortAnswerContent.insertAdjacentHTML('beforeend', renderSourceSection(q));
     }
 }
 
@@ -801,6 +810,7 @@ function showAnswerResult(question, isCorrect, userAnswer = '') {
                 </svg>
                 答對了！
             </div>
+            ${renderSourceSection(question)}
         `;
         return;
     }
@@ -818,6 +828,7 @@ function showAnswerResult(question, isCorrect, userAnswer = '') {
         <p class="text-slate-300">
             ${chosen ? `你的答案：<span class="text-red-400 font-bold">${escapeHtml(chosen)}</span>　｜　` : ''}正確答案：<span class="text-green-400 font-bold">${escapeHtml(question.correctAnswer)}</span>
         </p>
+        ${renderSourceSection(question)}
     `;
 }
 
@@ -1290,6 +1301,26 @@ function renderMarkdown(text) {
     return DOMPurify.sanitize(marked.parse(text), { USE_PROFILES: { html: true } });
 }
 
+/**
+ * 產生題目來源區塊的 HTML；題目沒有 `**來源**` 欄位時回傳空字串。
+ * 來源可能含有答案裁定等資訊，因此只在作答後或開啟解析時顯示，避免提前洩漏答案。
+ * @param {Object} q - 題目物件
+ * @returns {string}
+ */
+function renderSourceSection(q) {
+    if (!q || !q.source) return '';
+    const body =
+        typeof marked !== 'undefined'
+            ? renderMarkdown(q.source)
+            : `<pre class="whitespace-pre-wrap">${escapeHtml(q.source)}</pre>`;
+    return `
+        <div class="question-source">
+            <div class="question-source-title">來源</div>
+            <div class="explanation-content">${body}</div>
+        </div>
+    `;
+}
+
 function escapeHtml(text) {
     return String(text ?? '')
         .replace(/&/g, '&amp;')
@@ -1462,13 +1493,14 @@ function toggleExplanationPanel() {
 
 function openExplanationPanel() {
     const q = questions[currentIndex];
-    if (!q.explanation) return;
+    if (!q.explanation && !q.source) return;
 
     const panel = document.getElementById('explanationPanel');
     const content = document.getElementById('explanationContent');
 
-    // 渲染 Markdown 解析
-    content.innerHTML = renderMarkdown(q.explanation);
+    // 渲染 Markdown 解析，來源附在解析之後
+    content.innerHTML =
+        (q.explanation ? renderMarkdown(q.explanation) : '') + renderSourceSection(q);
     document.getElementById('explanationQuestionNum').textContent = `第 ${q.number} 題`;
 
     panel.classList.remove('hidden');
