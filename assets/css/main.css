@@ -26,6 +26,48 @@ body {
 .option-btn {
     transition: all 0.2s ease;
 }
+/* 點選作答：已標示、等待再點一次送出 */
+.option-btn.option-pending {
+    border-color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+.option-btn.option-pending::after {
+    content: '再點一次送出';
+    flex: none;
+    font-size: 0.75rem;
+    color: #93c5fd;
+    white-space: nowrap;
+}
+
+/* 題目字級（進階設定）：medium 維持原本大小 */
+[data-quiz-font='small'] #questionText {
+    font-size: 1rem;
+}
+[data-quiz-font='small'] .option-btn {
+    font-size: 0.875rem !important;
+}
+[data-quiz-font='large'] #questionText {
+    font-size: 1.3125rem;
+}
+[data-quiz-font='large'] .option-btn {
+    font-size: 1.125rem !important;
+}
+.font-size-option {
+    padding: 0.5rem 0;
+    border-radius: 0.5rem;
+    border: 1px solid #475569;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.font-size-option[aria-pressed='true'] {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
 .option-btn:hover:not(.answered) {
     transform: translateX(8px);
     border-color: #3b82f6;

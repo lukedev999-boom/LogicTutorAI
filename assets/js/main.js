@@ -9,6 +9,7 @@ let userAnswers = {}; // 使用者實際作答 { questionNum: 'A' | 'AC' }
 let selectedOptions = []; // 多選題已選選項
 let hasAnswered = false; // 當前題目是否已作答
 let randomJumpEnabled = false; // 隨機跳題功能
+let pendingOptionLetter = null; // 單選題點選作答：已標示、等待再點一次送出的選項
 let keywordHighlightEnabled = true; // 關鍵字高亮功能（預設啟用）
 
 // 題庫識別碼：不同題庫的作答進度彼此隔離，避免統計數字互相污染
@@ -667,8 +668,10 @@ function renderOptions(question) {
         return;
     }
 
+    pendingOptionLetter = null;
     const correctLetters = question.correctAnswer.split('');
     const chosenLetters = (userAnswers[question.number] || '').split('').filter(Boolean);
+    const displayedOptions = [];
 
     question.options.forEach((opt) => {
         const isCorrect = correctLetters.includes(opt.letter);
@@ -711,9 +714,10 @@ function renderOptions(question) {
             };
             div.appendChild(checkbox);
 
-            // 雙擊選項切換核取方塊（避免誤觸）
+            // 點選選項切換核取方塊；送出仍需按「提交答案」
             if (!hasAnswered) {
-                div.ondblclick = () => {
+                div.onclick = (e) => {
+                    if (e.target === checkbox) return;
                     checkbox.checked = !checkbox.checked;
                     checkbox.dispatchEvent(new Event('change'));
                 };
@@ -733,9 +737,9 @@ function renderOptions(question) {
             indicator.textContent = opt.letter;
             div.appendChild(indicator);
 
-            // 單選題雙擊事件（避免誤觸）
+            // 單選題點選作答：點一下標示，同一選項再點一下才送出（避免誤觸）
             if (!hasAnswered) {
-                div.ondblclick = () => selectSingleOption(opt.letter, question);
+                div.onclick = () => handleSingleOptionTap(opt.letter, question);
             }
         }
 
@@ -749,16 +753,50 @@ function renderOptions(question) {
             const displayText = chineseMatch
                 ? `${opt.letter}. ${chineseMatch[1]}`
                 : `${opt.letter}. ${opt.text}`;
-            textSpan.innerHTML = highlightKeywords(displayText);
+            displayedOptions.push({
+                letter: opt.letter,
+                text: chineseMatch ? chineseMatch[1] : opt.text,
+            });
+            textSpan.innerHTML = withLetterPrefix(opt.letter, highlightKeywords(displayText));
         } else {
             // 只顯示英文部分
             const englishText = opt.text.replace(/（.+?）/, '').trim();
             const displayText = `${opt.letter}. ${englishText}`;
-            textSpan.innerHTML = highlightKeywords(displayText);
+            displayedOptions.push({ letter: opt.letter, text: englishText });
+            textSpan.innerHTML = withLetterPrefix(opt.letter, highlightKeywords(displayText));
         }
         div.appendChild(textSpan);
 
         container.appendChild(div);
+    });
+
+    // 選項都很短時排成兩欄（實際排列只在折疊機雙窗格生效）
+    container.classList.toggle('options-compact', shouldUseCompactOptions(displayedOptions));
+}
+
+/**
+ * 把選項文字開頭的「A. 」包成 span，兩欄排列時可用 CSS 隱藏（字母圓圈已標示）
+ */
+function withLetterPrefix(letter, html) {
+    const prefix = `${letter}. `;
+    return html.startsWith(prefix)
+        ? `<span class="option-letter-prefix">${prefix}</span>${html.slice(prefix.length)}`
+        : html;
+}
+
+/**
+ * 單選題點選作答：第一次點選標示選項，同一選項再點一次才送出
+ */
+function handleSingleOptionTap(letter, question) {
+    if (hasAnswered) return;
+    if (resolveOptionTap(pendingOptionLetter, letter) === 'submit') {
+        pendingOptionLetter = null;
+        selectSingleOption(letter, question);
+        return;
+    }
+    pendingOptionLetter = letter;
+    document.querySelectorAll('#optionsContainer .option-btn').forEach((el) => {
+        el.classList.toggle('option-pending', el.dataset.letter === letter);
     });
 }
 
@@ -1961,6 +1999,47 @@ function toggleRandomJump() {
     storage.setItem('random_jump_enabled', randomJumpEnabled);
 }
 
+/**
+ * 套用題目字級（small／medium／large），並更新進階設定中的按鈕狀態
+ */
+function applyQuizFontSize(size) {
+    const value = normalizeFontSize(size);
+    document.documentElement.dataset.quizFont = value;
+    document.querySelectorAll('[data-font-size-option]').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.fontSizeOption === value));
+    });
+}
+
+function setQuizFontSize(size) {
+    const value = normalizeFontSize(size);
+    storage.setItem('quiz_font_size', value);
+    applyQuizFontSize(value);
+}
+
+/**
+ * 切換全螢幕，隱藏瀏覽器網址列以騰出更多作答空間
+ */
+function toggleFullscreen() {
+    if (document.fullscreenElement) {
+        document.exitFullscreen?.();
+        return;
+    }
+    const request = document.documentElement.requestFullscreen?.();
+    if (!request) {
+        showToast('此瀏覽器不支援全螢幕', 'warn');
+        return;
+    }
+    request.catch(() => showToast('無法進入全螢幕', 'warn'));
+}
+
+function updateFullscreenMenuItem() {
+    const item = document.getElementById('fullscreenMenuItem');
+    if (!item) return;
+    item.classList.toggle('hidden', !document.fullscreenEnabled);
+    const label = document.getElementById('fullscreenMenuLabel');
+    if (label) label.textContent = document.fullscreenElement ? '離開全螢幕' : '全螢幕';
+}
+
 function toggleKeywordHighlight() {
     keywordHighlightEnabled = document.getElementById('keywordHighlightCheckbox').checked;
     storage.setItem('keyword_highlight_enabled', keywordHighlightEnabled);
@@ -2380,6 +2459,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 載入已儲存的進階設定
     const savedRandomJump = storage.getItem('random_jump_enabled');
     randomJumpEnabled = savedRandomJump === 'true';
+
+    // 載入題目字級
+    applyQuizFontSize(storage.getItem('quiz_font_size'));
+
+    // 全螢幕選單項目：不支援的瀏覽器隱藏，狀態改變時更新文字
+    updateFullscreenMenuItem();
+    document.addEventListener('fullscreenchange', updateFullscreenMenuItem);
 
     // 載入關鍵字高亮設定（預設為啟用）
     const savedKeywordHighlight = storage.getItem('keyword_highlight_enabled');

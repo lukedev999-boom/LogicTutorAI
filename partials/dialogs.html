@@ -713,6 +713,40 @@
 
                 <div class="h-px bg-slate-700"></div>
 
+                <!-- 題目字級 -->
+                <div class="space-y-2">
+                    <span class="text-sm font-medium text-slate-300">題目字級</span>
+                    <p class="text-xs text-slate-500">調整題目與選項的文字大小，儲存在此瀏覽器</p>
+                    <div class="grid grid-cols-3 gap-2" role="group" aria-label="題目字級">
+                        <button
+                            type="button"
+                            data-font-size-option="small"
+                            onclick="setQuizFontSize('small')"
+                            class="font-size-option touch-target"
+                        >
+                            小
+                        </button>
+                        <button
+                            type="button"
+                            data-font-size-option="medium"
+                            onclick="setQuizFontSize('medium')"
+                            class="font-size-option touch-target"
+                        >
+                            中
+                        </button>
+                        <button
+                            type="button"
+                            data-font-size-option="large"
+                            onclick="setQuizFontSize('large')"
+                            class="font-size-option touch-target"
+                        >
+                            大
+                        </button>
+                    </div>
+                </div>
+
+                <div class="h-px bg-slate-700"></div>
+
                 <!-- 題型過濾設定 -->
                 <div class="space-y-3">
                     <div class="flex items-center gap-2 mb-2">

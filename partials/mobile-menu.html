@@ -125,6 +125,26 @@
             <span>進階設定</span>
         </button>
 
+        <!-- 全螢幕（隱藏瀏覽器網址列，不支援時由 main.js 隱藏） -->
+        <button
+            id="fullscreenMenuItem"
+            onclick="
+                toggleFullscreen();
+                closeMobileMenu();
+            "
+            class="menu-item w-full text-left"
+        >
+            <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"
+                />
+            </svg>
+            <span id="fullscreenMenuLabel">全螢幕</span>
+        </button>
+
         <!-- 下載範本 -->
         <a href="sampleMd/sample.md" download class="menu-item" onclick="closeMobileMenu()">
             <svg
