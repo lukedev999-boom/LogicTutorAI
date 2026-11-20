@@ -360,6 +360,15 @@ function refreshAnswerCardAvailability() {
 }
 
 /**
+ * 折疊機雙窗格：換題時把兩個窗格捲回頂端（非雙窗格版面時無作用）
+ */
+function resetPaneScroll() {
+    document.querySelectorAll('.fold-pane').forEach((pane) => {
+        pane.scrollTop = 0;
+    });
+}
+
+/**
  * 渲染當前題目
  */
 /**
@@ -373,6 +382,8 @@ function renderQuestion(opts = {}) {
     if (questions.length === 0) return;
 
     const { restartTimer = true } = opts;
+    // 只有換題才重置；切換翻譯或高亮重繪同一題，不應把使用者捲回頂端
+    if (restartTimer) resetPaneScroll();
     const q = questions[currentIndex];
     hasAnswered = !!answerState[q.number];
     selectedOptions = [];
@@ -2165,7 +2176,11 @@ function handleResize() {
 
     if (isMobile()) {
         // 手機版：確保面板初始為關閉
-        if (statsToggleBtn) statsToggleBtn.style.display = 'flex';
+        if (statsToggleBtn) {
+            // .hidden 帶 !important，必須移除 class，inline display 才會生效
+            statsToggleBtn.classList.remove('hidden');
+            statsToggleBtn.style.display = 'flex';
+        }
     } else {
         // 桌面版：確保面板正常顯示
         if (statsPanel) statsPanel.classList.remove('open');

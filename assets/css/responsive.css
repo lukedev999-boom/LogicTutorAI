@@ -539,6 +539,139 @@
     }
 }
 
+/* 尚未顯示題目時（載入中、空狀態）不顯示答題卡切換鈕 */
+body:has(#quizContainer.hidden) .stats-toggle-btn {
+    display: none !important;
+}
+
+/* 折疊機雙窗格：預設讓容器不產生版面盒，只有折疊機媒體查詢才啟用 */
+.fold-pane {
+    display: contents;
+}
+
+/* ========================================
+   折疊機展開（近正方形平板）：題目與選項雙窗格
+   固定視窗高度，導航列固定在底部，不需整頁捲動
+   ======================================== */
+
+@media (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
+    #app {
+        height: 100dvh;
+        min-height: 0;
+    }
+    /* 僅在顯示題目時固定視窗高度，空狀態與載入中仍可捲動 */
+    body:has(#quizContainer:not(.hidden)) #app,
+    body:has(#quizContainer:not(.hidden)) main {
+        overflow: hidden;
+    }
+    header {
+        position: static !important;
+    }
+    header > div {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    footer {
+        display: none;
+    }
+    main {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 0.5rem !important;
+    }
+    #quizContainer {
+        flex: 1;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        padding-bottom: 0 !important;
+    }
+    #quizMain {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-height: 0;
+    }
+    #quizMain > * {
+        margin: 0 !important;
+    }
+    #quizMain > p {
+        display: none;
+    }
+    #questionCard {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+    .fold-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .fold-pane {
+        display: block;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+    }
+    #foldNav {
+        order: 3;
+        flex-direction: row !important;
+        padding-right: 64px;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    }
+    #foldNav > * {
+        order: 0;
+    }
+    .stats-toggle-btn {
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        right: 0.75rem;
+        width: 44px;
+        height: 44px;
+    }
+    .question-header-wrapper {
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        align-items: center !important;
+    }
+    .question-header-right {
+        display: flex;
+        flex-wrap: nowrap;
+        width: auto !important;
+    }
+    .question-header-right button {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
+    .question-header-right button span {
+        display: none;
+    }
+    .floating-panel {
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: auto !important;
+        width: 50% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        max-width: 50% !important;
+        resize: none !important;
+        border-radius: 0 !important;
+        box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45) !important;
+    }
+    .floating-panel-header {
+        cursor: default;
+    }
+}
+
 /* ==================== 工具類別保護 ====================
  *
  * 此區塊必須維持在「最後載入的樣式表的最末端」。

@@ -394,9 +394,10 @@
         class="hidden grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 main-content-area"
     >
         <!-- 左側：題目區 -->
-        <div class="lg:col-span-3 space-y-3 sm:space-y-4">
+        <div id="quizMain" class="lg:col-span-3 space-y-3 sm:space-y-4">
             <!-- 導航按鈕（移至題目卡片上方）- 手機版優化 -->
             <div
+                id="foldNav"
                 class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/30 backdrop-blur rounded-xl px-3 sm:px-4 py-3 border border-slate-700/50"
             >
                 <!-- 上一題/下一題按鈕 - 手機版橫排 -->
@@ -640,181 +641,194 @@
                 </div>
 
                 <!-- 題目內容 -->
-                <div class="p-4 sm:p-6">
-                    <!-- 圖片區（如有） -->
-                    <div id="questionImage" class="hidden mb-6">
-                        <img
-                            id="questionImageSrc"
-                            src=""
-                            alt="題目圖片"
-                            class="max-w-full rounded-lg border border-slate-600"
-                        />
+                <div class="fold-body p-4 sm:p-6">
+                    <div class="fold-pane fold-pane-question">
+                        <!-- 圖片區（如有） -->
+                        <div id="questionImage" class="hidden mb-6">
+                            <img
+                                id="questionImageSrc"
+                                src=""
+                                alt="題目圖片"
+                                class="max-w-full rounded-lg border border-slate-600"
+                            />
+                        </div>
+
+                        <!-- 題目文字 -->
+                        <div id="questionText" class="text-lg text-gray-200 leading-relaxed mb-2">
+                            <!-- 動態載入題目 -->
+                        </div>
+
+                        <!-- 無中文翻譯時的提示 -->
+                        <p id="noTranslationHint" class="hidden mb-4 text-sm text-amber-400">
+                            此題沒有中文翻譯，已顯示英文原文
+                        </p>
                     </div>
 
-                    <!-- 題目文字 -->
-                    <div id="questionText" class="text-lg text-gray-200 leading-relaxed mb-2">
-                        <!-- 動態載入題目 -->
-                    </div>
-
-                    <!-- 無中文翻譯時的提示 -->
-                    <p id="noTranslationHint" class="hidden mb-4 text-sm text-amber-400">
-                        此題沒有中文翻譯，已顯示英文原文
-                    </p>
-
-                    <!-- 選項區 -->
-                    <div id="optionsContainer" class="space-y-3" role="group" aria-label="作答選項">
-                        <!-- 動態載入選項 -->
-                    </div>
-
-                    <!-- 多選題提交按鈕 -->
-                    <div id="submitBtnContainer" class="hidden mt-6">
-                        <button
-                            onclick="submitMultipleChoice()"
-                            class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 py-3 rounded-xl font-semibold text-white transition shadow-lg shadow-blue-500/25"
+                    <div class="fold-pane fold-pane-answer">
+                        <!-- 選項區 -->
+                        <div
+                            id="optionsContainer"
+                            class="space-y-3"
+                            role="group"
+                            aria-label="作答選項"
                         >
-                            提交答案
-                        </button>
-                    </div>
+                            <!-- 動態載入選項 -->
+                        </div>
 
-                    <!-- 簡答題查看答案區塊 -->
-                    <div id="shortAnswerSection" class="hidden mt-6">
-                        <div class="border border-green-500/30 rounded-xl overflow-hidden">
-                            <!-- 區塊標題 -->
-                            <div
-                                class="bg-gradient-to-r from-green-600/20 to-emerald-500/20 px-5 py-3 border-b border-green-500/30 flex items-center gap-2"
+                        <!-- 多選題提交按鈕 -->
+                        <div id="submitBtnContainer" class="hidden mt-6">
+                            <button
+                                onclick="submitMultipleChoice()"
+                                class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 py-3 rounded-xl font-semibold text-white transition shadow-lg shadow-blue-500/25"
                             >
-                                <svg
-                                    class="w-5 h-5 text-green-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                提交答案
+                            </button>
+                        </div>
+
+                        <!-- 簡答題查看答案區塊 -->
+                        <div id="shortAnswerSection" class="hidden mt-6">
+                            <div class="border border-green-500/30 rounded-xl overflow-hidden">
+                                <!-- 區塊標題 -->
+                                <div
+                                    class="bg-gradient-to-r from-green-600/20 to-emerald-500/20 px-5 py-3 border-b border-green-500/30 flex items-center gap-2"
                                 >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                <h4 class="font-semibold text-white">參考答案</h4>
-                            </div>
-                            <!-- 查看答案按鈕 -->
-                            <div id="showAnswerBtn" class="p-6 bg-slate-900/50 text-center">
-                                <p class="text-slate-400 mb-4">
-                                    此題為簡答題，請先自行思考後再查看答案
-                                </p>
-                                <button
-                                    onclick="showShortAnswer()"
-                                    class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 px-8 py-3 rounded-xl font-semibold text-white transition shadow-lg shadow-green-500/25"
+                                    <svg
+                                        class="w-5 h-5 text-green-400"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                        />
+                                    </svg>
+                                    <h4 class="font-semibold text-white">參考答案</h4>
+                                </div>
+                                <!-- 查看答案按鈕 -->
+                                <div id="showAnswerBtn" class="p-6 bg-slate-900/50 text-center">
+                                    <p class="text-slate-400 mb-4">
+                                        此題為簡答題，請先自行思考後再查看答案
+                                    </p>
+                                    <button
+                                        onclick="showShortAnswer()"
+                                        class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 px-8 py-3 rounded-xl font-semibold text-white transition shadow-lg shadow-green-500/25"
+                                    >
+                                        查看參考答案
+                                    </button>
+                                </div>
+                                <!-- 答案內容 -->
+                                <div id="shortAnswerContent" class="hidden p-6 bg-slate-900/50">
+                                    <!-- 動態載入答案內容 -->
+                                </div>
+                                <!-- 隱藏答案按鈕 -->
+                                <div
+                                    class="px-5 py-2 bg-slate-800/50 border-t border-green-500/20 text-center"
                                 >
-                                    查看參考答案
-                                </button>
-                            </div>
-                            <!-- 答案內容 -->
-                            <div id="shortAnswerContent" class="hidden p-6 bg-slate-900/50">
-                                <!-- 動態載入答案內容 -->
-                            </div>
-                            <!-- 隱藏答案按鈕 -->
-                            <div
-                                class="px-5 py-2 bg-slate-800/50 border-t border-green-500/20 text-center"
-                            >
-                                <button
-                                    onclick="hideShortAnswer()"
-                                    class="text-xs text-slate-400 hover:text-white transition"
-                                >
-                                    收起答案
-                                </button>
+                                    <button
+                                        onclick="hideShortAnswer()"
+                                        class="text-xs text-slate-400 hover:text-white transition"
+                                    >
+                                        收起答案
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- 答題結果提示 -->
-                    <div
-                        id="resultMessage"
-                        class="hidden mt-6 p-4 rounded-xl"
-                        role="status"
-                        aria-live="polite"
-                    >
-                        <!-- 動態顯示結果 -->
-                    </div>
+                        <!-- 答題結果提示 -->
+                        <div
+                            id="resultMessage"
+                            class="hidden mt-6 p-4 rounded-xl"
+                            role="status"
+                            aria-live="polite"
+                        >
+                            <!-- 動態顯示結果 -->
+                        </div>
 
-                    <!-- AI 解析結果區塊 -->
-                    <div id="aiAnalysisSection" class="hidden mt-6">
-                        <div class="border border-purple-500/30 rounded-xl overflow-hidden">
-                            <!-- 區塊標題 -->
-                            <div
-                                class="bg-gradient-to-r from-purple-600/20 to-pink-500/20 px-5 py-3 border-b border-purple-500/30 flex items-center justify-between"
-                            >
-                                <h4 class="font-semibold text-white flex items-center gap-2">
-                                    <svg
-                                        class="w-5 h-5 text-purple-400"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                                        />
-                                    </svg>
-                                    AI 解析
-                                </h4>
-                                <button
-                                    onclick="hideAiAnalysis()"
-                                    class="text-slate-400 hover:text-white transition p-1"
-                                >
-                                    <svg
-                                        class="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- 載入中狀態 -->
-                            <div
-                                id="aiAnalysisLoading"
-                                class="hidden p-8 text-center bg-slate-900/50"
-                            >
+                        <!-- AI 解析結果區塊 -->
+                        <div id="aiAnalysisSection" class="hidden mt-6">
+                            <div class="border border-purple-500/30 rounded-xl overflow-hidden">
+                                <!-- 區塊標題 -->
                                 <div
-                                    class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full loading-spinner mx-auto mb-3"
-                                ></div>
-                                <p class="text-slate-400 text-sm">AI 正在分析題目...</p>
-                            </div>
-                            <!-- 解析內容 -->
-                            <div
-                                id="aiAnalysisContent"
-                                class="hidden p-6 bg-slate-900/50 text-gray-200"
-                            >
-                                <!-- 動態載入 AI 回覆 -->
-                            </div>
-                            <!-- 錯誤訊息 -->
-                            <div
-                                id="aiAnalysisError"
-                                class="hidden p-6 bg-slate-900/50 text-center"
-                            >
-                                <p id="aiAnalysisErrorMsg" class="text-red-400 mb-3">發生錯誤</p>
-                                <button
-                                    onclick="analyzeWithAI()"
-                                    class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm transition"
+                                    class="bg-gradient-to-r from-purple-600/20 to-pink-500/20 px-5 py-3 border-b border-purple-500/30 flex items-center justify-between"
                                 >
-                                    重試
-                                </button>
-                            </div>
-                            <!-- 底部提示 -->
-                            <div class="px-5 py-2 bg-slate-800/50 border-t border-purple-500/20">
-                                <p class="text-xs text-slate-500 text-center">
-                                    由 GROQ AI 提供分析 | 結果僅供參考
-                                </p>
+                                    <h4 class="font-semibold text-white flex items-center gap-2">
+                                        <svg
+                                            class="w-5 h-5 text-purple-400"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                            />
+                                        </svg>
+                                        AI 解析
+                                    </h4>
+                                    <button
+                                        onclick="hideAiAnalysis()"
+                                        class="text-slate-400 hover:text-white transition p-1"
+                                    >
+                                        <svg
+                                            class="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <!-- 載入中狀態 -->
+                                <div
+                                    id="aiAnalysisLoading"
+                                    class="hidden p-8 text-center bg-slate-900/50"
+                                >
+                                    <div
+                                        class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full loading-spinner mx-auto mb-3"
+                                    ></div>
+                                    <p class="text-slate-400 text-sm">AI 正在分析題目...</p>
+                                </div>
+                                <!-- 解析內容 -->
+                                <div
+                                    id="aiAnalysisContent"
+                                    class="hidden p-6 bg-slate-900/50 text-gray-200"
+                                >
+                                    <!-- 動態載入 AI 回覆 -->
+                                </div>
+                                <!-- 錯誤訊息 -->
+                                <div
+                                    id="aiAnalysisError"
+                                    class="hidden p-6 bg-slate-900/50 text-center"
+                                >
+                                    <p id="aiAnalysisErrorMsg" class="text-red-400 mb-3">
+                                        發生錯誤
+                                    </p>
+                                    <button
+                                        onclick="analyzeWithAI()"
+                                        class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm transition"
+                                    >
+                                        重試
+                                    </button>
+                                </div>
+                                <!-- 底部提示 -->
+                                <div
+                                    class="px-5 py-2 bg-slate-800/50 border-t border-purple-500/20"
+                                >
+                                    <p class="text-xs text-slate-500 text-center">
+                                        由 GROQ AI 提供分析 | 結果僅供參考
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

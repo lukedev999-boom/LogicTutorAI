@@ -9,3 +9,6 @@ node_modules/
 
 # 詞典建置用的原始資料（68MB，由 npm run build:dict 自動下載）
 /.cache/
+
+# 本機設計與計畫文件（不推送）
+/docs/superpowers/
