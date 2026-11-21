@@ -801,6 +801,46 @@ body:has(#quizContainer.hidden) .stats-toggle-btn {
    ======================================== */
 
 @media (max-width: 599px) {
+    /* 只留整頁一個捲軸：解除共用區塊的固定視窗高度與內層捲動 */
+    #app {
+        height: auto;
+        min-height: 100dvh;
+    }
+    body:has(#quizContainer:not(.hidden)) #app,
+    body:has(#quizContainer:not(.hidden)) main {
+        overflow: visible;
+    }
+    /* 題目短時卡片撐滿視窗讓導航列貼底，題目長時隨內容長高 */
+    #quizContainer {
+        flex: 1 0 auto;
+        grid-template-rows: 1fr;
+    }
+    #questionCard {
+        flex: 1 0 auto;
+    }
+    .fold-body {
+        flex: 1 0 auto;
+        overflow: visible;
+    }
+    /* 導航列貼在視窗底部，捲到哪都按得到 */
+    #foldNav {
+        position: sticky;
+        bottom: 0;
+        z-index: 30;
+        background: rgba(15, 23, 42, 0.96);
+    }
+    /* 捲動到某區塊時不要被貼底的導航列擋住 */
+    #aiAnalysisSection {
+        scroll-margin-bottom: 5rem;
+    }
+    /* 覆蓋層捲到底時不帶動背後的頁面 */
+    .floating-panel-body,
+    .dialog-content,
+    .menu-content,
+    .stats-panel,
+    .image-container {
+        overscroll-behavior: contain;
+    }
     .fold-pane-answer {
         margin-top: 0.75rem;
     }

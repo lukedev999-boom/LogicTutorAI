@@ -132,6 +132,8 @@
                         min="1"
                         placeholder="題號"
                         class="w-16 sm:w-20 bg-slate-800 border border-slate-600 rounded-lg px-2 sm:px-3 py-2 text-center text-white text-sm focus:outline-none focus:border-blue-500 touch-target"
+                        onfocus="this.value = ''"
+                        onblur="restoreJumpInput()"
                         onkeypress="if (event.key === 'Enter') jumpToQuestion();"
                     />
                     <span class="text-slate-400 text-xs sm:text-sm hidden sm:inline">題</span>

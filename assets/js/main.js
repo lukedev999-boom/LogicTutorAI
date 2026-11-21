@@ -444,6 +444,17 @@ function resetPaneScroll() {
     document.querySelectorAll('.fold-pane').forEach((pane) => {
         pane.scrollTop = 0;
     });
+    // 手機直向改為整頁捲動，換題時捲回頁首
+    if (window.matchMedia('(max-width: 599px)').matches) window.scrollTo(0, 0);
+}
+
+/**
+ * 跳題輸入框失焦且未輸入時，填回目前題號
+ */
+function restoreJumpInput() {
+    const input = document.getElementById('jumpInput');
+    const q = questions[currentIndex];
+    if (input.value === '' && q) input.value = q.number;
 }
 
 /**

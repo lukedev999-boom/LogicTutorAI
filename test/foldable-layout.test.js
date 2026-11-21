@@ -234,8 +234,24 @@ test('深度精簡：導航列、卡片內距與選項間距縮小', () => {
     assert.match(rule(b, '.fold-pane .option-btn'), /padding: 0.75rem 1rem/);
 });
 
-test('手機（599px 以下）共用精簡版面：單欄整體捲動、標題列可換行', () => {
-    assert.match(rule(compact(), '.fold-body'), /overflow-y: auto/);
+test('手機（599px 以下）只留整頁捲軸：內層不捲動、導航列貼底', () => {
+    const p = phone();
+    assert.match(rule(p, '#app'), /height: auto/);
+    assert.match(rule(p, '.fold-body'), /overflow: visible/);
+    assert.match(p, /body:has\(#quizContainer:not\(\.hidden\)\) main\s*\{[^}]*overflow: visible/);
+    assert.match(rule(p, '#foldNav'), /position: sticky/);
+    assert.match(rule(p, '#foldNav'), /bottom: 0/);
+    assert.match(mainJs, /window\.scrollTo\(0, 0\)/);
+});
+
+test('跳題輸入框聚焦時清空、失焦未輸入時填回題號', () => {
+    const input = /<input[^>]*id="jumpInput"[^>]*>/.exec(html)[0];
+    assert.match(input, /onfocus="this\.value = ''"/);
+    assert.match(input, /onblur="restoreJumpInput\(\)"/);
+    assert.match(mainJs, /function restoreJumpInput\(\)/);
+});
+
+test('手機（599px 以下）標題列可換行', () => {
     assert.match(rule(phone(), '#questionHeader'), /flex-wrap: wrap/);
     assert.match(rule(phone(), '.question-header-right'), /margin-left: auto/);
 });
