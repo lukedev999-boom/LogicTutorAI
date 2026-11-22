@@ -245,7 +245,7 @@
                     d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
                 />
             </svg>
-            <span>AI 設定 (GROQ)</span>
+            <span>AI 設定</span>
         </button>
 
         <!-- 進階設定 -->
@@ -896,7 +896,7 @@
                                     class="px-5 py-2 bg-slate-800/50 border-t border-purple-500/20"
                                 >
                                     <p class="text-xs text-slate-500 text-center">
-                                        由 GROQ AI 提供分析 | 結果僅供參考
+                                        由 AI 提供分析 | 結果僅供參考
                                     </p>
                                 </div>
                             </div>
@@ -1311,7 +1311,7 @@
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                     </svg>
-                    AI 設定 (GROQ)
+                    AI 設定
                 </h3>
                 <button
                     onclick="closeSettingsDialog()"
@@ -1329,11 +1329,36 @@
             </div>
             <!-- Dialog 內容 -->
             <div class="p-6 space-y-5">
+                <!-- API Base URL 輸入 -->
+                <div>
+                    <label
+                        for="aiBaseUrlInput"
+                        class="block text-sm font-medium text-slate-300 mb-2"
+                        >API Base URL（OpenAI 相容）</label
+                    >
+                    <div class="flex gap-2">
+                        <input
+                            type="url"
+                            id="aiBaseUrlInput"
+                            placeholder="https://api.groq.com/openai/v1"
+                            class="flex-1 min-w-0 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
+                        <button
+                            onclick="resetAiBaseUrl()"
+                            class="bg-slate-700 hover:bg-slate-600 px-4 py-2.5 rounded-lg font-medium transition shrink-0"
+                        >
+                            預設
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">
+                        預設 GROQ。可改用 OpenAI、OpenRouter 或本機
+                        Ollama（http://localhost:11434/v1，免金鑰）等端點；端點須允許瀏覽器 CORS。
+                    </p>
+                </div>
+
                 <!-- API Key 輸入 -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2"
-                        >GROQ API Key</label
-                    >
+                    <label class="block text-sm font-medium text-slate-300 mb-2">API Key</label>
                     <div class="flex gap-2">
                         <input
                             type="password"

@@ -28,8 +28,11 @@ let enabledQuestionTypes = ['單選題', '多選題', '簡答題'];
 // 搜尋狀態
 let searchKeyword = ''; // 目前的搜尋關鍵字（空字串表示未搜尋）
 
-// GROQ AI 設定
-let groqApiKey = ''; // GROQ API Key
+// AI 設定（任何 OpenAI 相容端點，預設 GROQ）
+const DEFAULT_AI_BASE_URL = 'https://api.groq.com/openai/v1';
+let aiBaseUrl = DEFAULT_AI_BASE_URL; // API Base URL
+let aiVerified = false; // 目前端點是否已驗證成功
+let groqApiKey = ''; // API Key（沿用舊鍵名以保留既有設定）
 let groqModel = 'openai/gpt-oss-20b'; // 預設模型
 let availableModels = []; // 可用模型列表
 
@@ -1753,11 +1756,37 @@ function endDrag() {
 }
 
 // ==================== 設定 Dialog ====================
+/**
+ * 正規化 Base URL：去除空白與結尾斜線，空值回到預設 GROQ。
+ * @param {string} url
+ * @returns {string}
+ */
+function normalizeAiBaseUrl(url) {
+    const trimmed = String(url || '')
+        .trim()
+        .replace(/\/+$/, '');
+    return trimmed || DEFAULT_AI_BASE_URL;
+}
+
+function isDefaultAiProvider() {
+    return aiBaseUrl === DEFAULT_AI_BASE_URL;
+}
+
+/** 有金鑰才送 Authorization，讓本機 Ollama 等免金鑰端點可用。 */
+function buildAiHeaders(key, extra = {}) {
+    return key ? { Authorization: `Bearer ${key}`, ...extra } : { ...extra };
+}
+
+function resetAiBaseUrl() {
+    document.getElementById('aiBaseUrlInput').value = DEFAULT_AI_BASE_URL;
+}
+
 function openSettingsDialog() {
     const input = document.getElementById('groqApiKeyInput');
     if (groqApiKey) {
         input.value = groqApiKey;
     }
+    document.getElementById('aiBaseUrlInput').value = aiBaseUrl;
     document.getElementById('settingsDialog').classList.remove('hidden');
     document.getElementById('modelSelectContainer').classList.add('hidden');
     document.getElementById('advancedSettingsContainer').classList.add('hidden');
@@ -1776,8 +1805,11 @@ function handleSettingsBackdropClick(event) {
 async function verifyApiKey() {
     const input = document.getElementById('groqApiKeyInput');
     const key = input.value.trim();
+    const baseUrl = normalizeAiBaseUrl(document.getElementById('aiBaseUrlInput').value);
+    document.getElementById('aiBaseUrlInput').value = baseUrl;
 
-    if (!key) {
+    // GROQ 一定需要金鑰；自訂端點（如本機 Ollama）可免金鑰
+    if (!key && baseUrl === DEFAULT_AI_BASE_URL) {
         showToast('請輸入 GROQ API Key', 'warn');
         return;
     }
@@ -1791,15 +1823,22 @@ async function verifyApiKey() {
 
     try {
         // 測試 API Key
-        const response = await fetch('https://api.groq.com/openai/v1/models', {
-            headers: { Authorization: `Bearer ${key}` },
+        const response = await fetch(`${baseUrl}/models`, {
+            headers: buildAiHeaders(key),
         });
 
         if (response.ok) {
             const data = await response.json();
-            availableModels = data.data.map((m) => m.id);
+            availableModels = (data.data || []).map((m) => m.id);
             groqApiKey = key;
+            aiBaseUrl = baseUrl;
+            aiVerified = true;
             storage.setItem('groq_api_key', key);
+            storage.setItem('ai_base_url', baseUrl);
+            // 換端點後舊模型可能不存在，改選清單第一個
+            if (!availableModels.includes(groqModel) && availableModels.length) {
+                selectModel(availableModels[0]);
+            }
 
             // 顯示模型選擇
             document.getElementById('modelSelectContainer').classList.remove('hidden');
@@ -1814,7 +1853,7 @@ async function verifyApiKey() {
             status.className = 'mt-2 text-xs text-red-400';
         }
     } catch (e) {
-        status.textContent = '✗ 無法連接到 GROQ API';
+        status.textContent = '✗ 無法連接到 API（請確認 Base URL 與 CORS）';
         status.className = 'mt-2 text-xs text-red-400';
     }
 
@@ -1823,10 +1862,13 @@ async function verifyApiKey() {
 }
 
 function populateModelDropdown() {
+    // GROQ 清單含語音等非對話模型，維持原篩選；自訂端點全部列出
     renderModelOptions(
-        availableModels.filter(
-            (m) => m.includes('mixtral') || m.includes('gpt') || m.includes('llama'),
-        ),
+        isDefaultAiProvider()
+            ? availableModels.filter(
+                  (m) => m.includes('mixtral') || m.includes('gpt') || m.includes('llama'),
+              )
+            : availableModels,
     );
 }
 
@@ -1897,8 +1939,8 @@ function resetCustomPrompt() {
 }
 
 function saveSettings() {
-    if (!groqApiKey) {
-        showToast('請先輸入並驗證 API Key', 'warn');
+    if (!aiVerified) {
+        showToast('請先輸入並驗證 API 設定', 'warn');
         return;
     }
 
@@ -1910,6 +1952,7 @@ function saveSettings() {
     }
 
     storage.setItem('groq_api_key', groqApiKey);
+    storage.setItem('ai_base_url', aiBaseUrl);
     storage.setItem('groq_model', groqModel);
     storage.setItem('groq_custom_prompt', customPrompt);
 
@@ -2466,6 +2509,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedModel = storage.getItem('groq_model');
     if (savedKey) groqApiKey = savedKey;
     if (savedModel) groqModel = savedModel;
+    aiBaseUrl = normalizeAiBaseUrl(storage.getItem('ai_base_url'));
+    aiVerified = Boolean(savedKey) || !isDefaultAiProvider();
 
     // 載入已儲存的進階設定
     const savedRandomJump = storage.getItem('random_jump_enabled');
@@ -2642,8 +2687,8 @@ async function analyzeWithAI() {
         const savedKey = storage.getItem('groq_api_key');
         if (savedKey) {
             groqApiKey = savedKey;
-        } else {
-            showToast('請先在設定中配置 GROQ API Key', 'warn');
+        } else if (isDefaultAiProvider()) {
+            showToast('請先在設定中配置 API Key', 'warn');
             openSettingsDialog();
             return;
         }
@@ -2701,12 +2746,9 @@ ${q.chineseText ? `中文翻譯：\n${q.chineseText}\n` : ''}`;
     }
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch(`${aiBaseUrl}/chat/completions`, {
             method: 'POST',
-            headers: {
-                Authorization: `Bearer ${groqApiKey}`,
-                'Content-Type': 'application/json',
-            },
+            headers: buildAiHeaders(groqApiKey, { 'Content-Type': 'application/json' }),
             body: JSON.stringify({
                 model: groqModel,
                 messages: [

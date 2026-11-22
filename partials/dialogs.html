@@ -207,7 +207,7 @@
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                     </svg>
-                    AI 設定 (GROQ)
+                    AI 設定
                 </h3>
                 <button
                     onclick="closeSettingsDialog()"
@@ -225,11 +225,36 @@
             </div>
             <!-- Dialog 內容 -->
             <div class="p-6 space-y-5">
+                <!-- API Base URL 輸入 -->
+                <div>
+                    <label
+                        for="aiBaseUrlInput"
+                        class="block text-sm font-medium text-slate-300 mb-2"
+                        >API Base URL（OpenAI 相容）</label
+                    >
+                    <div class="flex gap-2">
+                        <input
+                            type="url"
+                            id="aiBaseUrlInput"
+                            placeholder="https://api.groq.com/openai/v1"
+                            class="flex-1 min-w-0 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
+                        <button
+                            onclick="resetAiBaseUrl()"
+                            class="bg-slate-700 hover:bg-slate-600 px-4 py-2.5 rounded-lg font-medium transition shrink-0"
+                        >
+                            預設
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">
+                        預設 GROQ。可改用 OpenAI、OpenRouter 或本機
+                        Ollama（http://localhost:11434/v1，免金鑰）等端點；端點須允許瀏覽器 CORS。
+                    </p>
+                </div>
+
                 <!-- API Key 輸入 -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2"
-                        >GROQ API Key</label
-                    >
+                    <label class="block text-sm font-medium text-slate-300 mb-2">API Key</label>
                     <div class="flex gap-2">
                         <input
                             type="password"
